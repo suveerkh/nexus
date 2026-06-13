@@ -58,4 +58,4 @@ Electron · React · SQLite · TipTap · react-force-graph-2d
 
 ## License
 
-MIT © Suveer
+MIT © Phantom
