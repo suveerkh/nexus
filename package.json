@@ -1,0 +1,42 @@
+{
+  "name": "nexus",
+  "version": "1.0.0",
+  "description": "Your knowledge, connected.",
+  "author": "Suveer",
+  "main": "main.js",
+  "scripts": {
+    "dev": "concurrently \"npm run vite\" \"npm run electron\"",
+    "vite": "cd renderer && npm run dev",
+    "electron": "wait-on http://localhost:5173 && electron .",
+    "build": "npm run vite-build && node_modules/.bin/electron-builder",
+    "vite-build": "npm --prefix renderer run build"
+  },
+  "build": {
+    "appId": "com.phantom.nexus",
+    "productName": "Nexus",
+    "mac": {
+      "icon": "assets/nexus.icns",
+      "category": "public.app-category.productivity"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "database/**/*",
+      "assets/**/*",
+      "renderer/dist/**/*"
+    ],
+    "directories": {
+      "output": "dist"
+    }
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.4",
+    "concurrently": "^8.2.2",
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3",
+    "wait-on": "^7.2.0"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0"
+  }
+}
