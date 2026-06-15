@@ -21,6 +21,7 @@ export default function Topic({
   const [saveStatus, setSaveStatus] = useState('saved')
   const saveTimer = useRef(null)
   const tagTimer = useRef(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   const load = async () => {
     const tp = await window.nexus.getTopic(id)
@@ -56,10 +57,8 @@ export default function Topic({
   }
 
   const handleDelete = async () => {
-    if (window.confirm(`Delete "${title}"? This cannot be undone.`)) {
-      await window.nexus.deleteTopic(id)
-      onBack()
-    }
+    await window.nexus.deleteTopic(id)
+    onBack()
   }
 
   if (!topic)
@@ -186,7 +185,7 @@ export default function Topic({
           {saveStatus === 'saved' ? '✓ Saved' : 'Saving...'}
         </span>
         <button
-          onClick={handleDelete}
+          onClick={() => setConfirmDelete(true)}
           style={{
             marginLeft: 'auto', background: 'none', border: '1px solid transparent',
             color: t.text3, fontSize: '12px', padding: '5px 12px', borderRadius: '6px',
@@ -328,6 +327,59 @@ export default function Topic({
           )}
         </div>
       </div>
+
+      {/* Delete confirmation popup */}
+      {confirmDelete && (
+        <div
+          onClick={() => setConfirmDelete(false)}
+          style={{
+            position: 'fixed', inset: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 200,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: t.modalBg,
+              border: `1px solid #cc3333`,
+              borderRadius: '10px',
+              padding: '20px 24px',
+              width: '300px',
+              boxShadow: '0 8px 32px #00000055',
+            }}
+          >
+            <div style={{ fontSize: '14px', fontWeight: 600, color: t.text1, marginBottom: '6px' }}>
+              Delete "{title}"?
+            </div>
+            <div style={{ fontSize: '12px', color: t.text3, marginBottom: '18px' }}>
+              This cannot be undone.
+            </div>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setConfirmDelete(false)}
+                style={{
+                  background: 'none', border: `1px solid ${t.border}`, color: t.text3,
+                  padding: '7px 14px', borderRadius: '7px', cursor: 'pointer',
+                  fontSize: '12px', fontFamily: 'Inter, sans-serif',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                style={{
+                  background: '#2a0808', border: '1px solid #cc3333', color: '#ff6666',
+                  padding: '7px 14px', borderRadius: '7px', cursor: 'pointer',
+                  fontSize: '12px', fontFamily: 'Inter, sans-serif',
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Link modal */}
       {showLinkModal && (
