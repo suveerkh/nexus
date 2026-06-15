@@ -1,7 +1,7 @@
-export default function Home({ topics, onSelectTopic, theme: t }) {
+export default function Home({ topics, onSelectTopic, theme: t, search, activeTag, onTagClick, onClearTag }) {
   return (
     <div style={{ padding: '32px' }}>
-      <div style={{ marginBottom: '32px' }}>
+      <div style={{ marginBottom: activeTag ? '16px' : '32px' }}>
         <h1 style={{ fontSize: '22px', fontWeight: 600, color: t.text1, marginBottom: '4px' }}>
           Your Knowledge
         </h1>
@@ -10,13 +10,30 @@ export default function Home({ topics, onSelectTopic, theme: t }) {
         </p>
       </div>
 
+      {activeTag && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+          <span style={{ fontSize: '12px', color: t.text3 }}>Filtered by tag:</span>
+          <span style={{
+            background: t.newBtnBg, color: t.accent, fontSize: '12px',
+            padding: '4px 10px', borderRadius: '6px', border: `1px solid ${t.newBtnBorder}`,
+            display: 'flex', alignItems: 'center', gap: '6px',
+          }}>
+            {activeTag}
+            <span
+              onClick={onClearTag}
+              style={{ cursor: 'pointer', color: t.text3, fontWeight: 600 }}
+            >×</span>
+          </span>
+        </div>
+      )}
+
       {topics.length === 0 && (
         <div style={{
           textAlign: 'center', color: t.text4, fontSize: '14px',
           marginTop: '80px', lineHeight: '2',
         }}>
-          No topics yet.<br />
-          Hit "+ New Topic" to start building your knowledge graph.
+          {activeTag ? `No topics tagged "${activeTag}".` : 'No topics yet.'}<br />
+          {!activeTag && 'Hit "+ New Topic" to start building your knowledge graph.'}
         </div>
       )}
 
@@ -27,11 +44,8 @@ export default function Home({ topics, onSelectTopic, theme: t }) {
       }}>
         {topics.map(topic => (
           <div key={topic.id} onClick={() => onSelectTopic(topic.id)} style={{
-            background: t.bg2,
-            border: `1px solid ${t.border}`,
-            borderRadius: '10px',
-            padding: '16px',
-            cursor: 'pointer',
+            background: t.bg2, border: `1px solid ${t.border}`,
+            borderRadius: '10px', padding: '16px', cursor: 'pointer',
             transition: 'border-color 0.15s',
           }}
             onMouseEnter={e => e.currentTarget.style.borderColor = t.accent}
@@ -56,11 +70,17 @@ export default function Home({ topics, onSelectTopic, theme: t }) {
             {topic.tags && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                 {topic.tags.split(',').filter(Boolean).map(tag => (
-                  <span key={tag} style={{
-                    background: t.newBtnBg, color: t.accent, fontSize: '10px',
-                    padding: '2px 7px', borderRadius: '4px',
-                    border: `1px solid ${t.newBtnBorder}`, fontWeight: 500,
-                  }}>
+                  <span
+                    key={tag}
+                    onClick={e => { e.stopPropagation(); onTagClick(tag.trim()) }}
+                    style={{
+                      background: activeTag === tag.trim() ? t.accent : t.newBtnBg,
+                      color: activeTag === tag.trim() ? '#fff' : t.accent,
+                      fontSize: '10px', padding: '2px 7px', borderRadius: '4px',
+                      border: `1px solid ${t.newBtnBorder}`, fontWeight: 500,
+                      cursor: 'pointer', transition: 'all 0.12s',
+                    }}
+                  >
                     {tag.trim()}
                   </span>
                 ))}
