@@ -4,3 +4,36 @@ html, body, #root {
   height: 100vh;
   overflow: hidden;
 }
+
+/* Scrollbars — dark mode (default) */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e2a5a;
+  border-radius: 999px;
+  transition: background 0.2s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3a4a8a;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Scrollbars — light mode */
+[data-theme="light"]::-webkit-scrollbar-thumb {
+  background: #c0cce8;
+}
+
+[data-theme="light"]::-webkit-scrollbar-thumb:hover {
+  background: #9aaad0;
+}

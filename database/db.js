@@ -43,12 +43,12 @@ module.exports = {
   createLink: (fromId, toId, relationship) => db.prepare('INSERT INTO links (from_id, to_id, relationship) VALUES (?, ?, ?)').run(fromId, toId, relationship),
   getLinks: (topicId) => db.prepare(`
     SELECT l.id, l.from_id, l.to_id, l.relationship,
-      CASE WHEN l.from_id = ? THEN t2.title ELSE t1.title END as to_title
-    FROM links l 
+      t2.title as to_title, t2.content as to_content, t2.tags as to_tags
+    FROM links l
     JOIN topics t1 ON l.from_id = t1.id
     JOIN topics t2 ON l.to_id = t2.id
-    WHERE l.from_id = ? OR l.to_id = ?
-  `).all(topicId, topicId, topicId),
+    WHERE l.from_id = ?
+  `).all(topicId),
   deleteLink: (id) => db.prepare('DELETE FROM links WHERE id = ?').run(id),
   getAllLinks: () => db.prepare('SELECT * FROM links').all(),
   getBacklinks: (topicId) => db.prepare(`

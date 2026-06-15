@@ -26,6 +26,9 @@ export default function App() {
   const [dragOverId, setDragOverId] = useState(null)
   const [activeTag, setActiveTag] = useState(null)
 
+  useEffect(() => {
+    document.body.setAttribute('data-theme', darkMode ? 'dark' : 'light')
+  }, [darkMode])
 
   const theme = darkMode ? {
     bg: '#0a0a0f',
@@ -329,17 +332,17 @@ ${linkedTopics || '_No links yet._'}
   }
 
   const filteredTopics = topics.filter(topic => {
-  const matchesSearch =
-    topic.title.toLowerCase().includes(search.toLowerCase()) ||
-    (topic.content && topic.content.replace(/<[^>]+>/g, '').toLowerCase().includes(search.toLowerCase())) ||
-    (topic.tags && topic.tags.toLowerCase().includes(search.toLowerCase()))
+    const matchesSearch =
+      topic.title.toLowerCase().includes(search.toLowerCase()) ||
+      (topic.content && topic.content.replace(/<[^>]+>/g, '').toLowerCase().includes(search.toLowerCase())) ||
+      (topic.tags && topic.tags.toLowerCase().includes(search.toLowerCase()))
 
-  const matchesTag = activeTag
-    ? topic.tags && topic.tags.split(',').map(t => t.trim()).includes(activeTag)
-    : true
+    const matchesTag = activeTag
+      ? topic.tags && topic.tags.split(',').map(t => t.trim()).includes(activeTag)
+      : true
 
-  return matchesSearch && matchesTag
-})
+    return matchesSearch && matchesTag
+  })
 
   if (showOnboarding) {
     return (
@@ -376,7 +379,7 @@ ${linkedTopics || '_No links yet._'}
         onDrop={handleDrop}
         onDragEnd={handleDragEnd}
         activeTag={activeTag}
-  onClearTag={() => setActiveTag(null)}
+        onClearTag={() => setActiveTag(null)}
       />
 
       <input
@@ -432,16 +435,16 @@ ${linkedTopics || '_No links yet._'}
 
         <main style={{ flex: 1, overflowY: activePage === 'graph' ? 'hidden' : 'auto', background: theme.bg }}>
           {activePage === 'home' && (
-  <Home
-    topics={search || activeTag ? filteredTopics : getSortedTopics()}
-    onSelectTopic={openTopic}
-    theme={theme}
-    search={search}
-    activeTag={activeTag}
-    onTagClick={(tag) => setActiveTag(tag)}
-    onClearTag={() => setActiveTag(null)}
-  />
-)}
+            <Home
+              topics={search || activeTag ? filteredTopics : getSortedTopics()}
+              onSelectTopic={openTopic}
+              theme={theme}
+              search={search}
+              activeTag={activeTag}
+              onTagClick={(tag) => setActiveTag(tag)}
+              onClearTag={() => setActiveTag(null)}
+            />
+          )}
           {activePage === 'graph' && (
             <Graph
               topics={topics}
