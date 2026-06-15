@@ -51,4 +51,11 @@ module.exports = {
   `).all(topicId, topicId, topicId),
   deleteLink: (id) => db.prepare('DELETE FROM links WHERE id = ?').run(id),
   getAllLinks: () => db.prepare('SELECT * FROM links').all(),
+  getBacklinks: (topicId) => db.prepare(`
+    SELECT l.id, l.from_id, l.to_id, l.relationship,
+      t1.title as from_title, t1.content as from_content, t1.tags as from_tags
+    FROM links l
+    JOIN topics t1 ON l.from_id = t1.id
+    WHERE l.to_id = ?
+  `).all(topicId),
 }

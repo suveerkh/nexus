@@ -11,6 +11,7 @@ export default function Topic({
 }) {
   const [topic, setTopic] = useState(null)
   const [links, setLinks] = useState([])
+  const [backlinks, setBacklinks] = useState([])
   const [content, setContent] = useState('')
   const [tags, setTags] = useState('')
   const [title, setTitle] = useState('')
@@ -24,11 +25,13 @@ export default function Topic({
   const load = async () => {
     const tp = await window.nexus.getTopic(id)
     const l = await window.nexus.getLinks(id)
+    const bl = await window.nexus.getBacklinks(id)
     setTopic(tp)
     setTitle(tp.title)
     setContent(tp.content || '')
     setTags(tp.tags || '')
     setLinks(l)
+    setBacklinks(bl)
   }
 
   useEffect(() => {
@@ -328,6 +331,110 @@ export default function Topic({
             + Add Link
           </button>
         </div>
+
+        {backlinks.length > 0 && (
+          <div style={sectionStyle}>
+            <div style={sectionLabel}>REFERENCED BY</div>
+            {backlinks.map((bl) => {
+              const plainText = bl.from_content
+                ? bl.from_content.replace(/<[^>]+>/g, '').trim()
+                : ''
+              const snippet = plainText.length > 120
+                ? plainText.slice(0, 120) + '…'
+                : plainText
+
+              return (
+                <div
+                  key={bl.id}
+                  onClick={() => onSelectTopic(bl.from_id)}
+                  style={{
+                    background: t.linkCardBg,
+                    border: `1px solid ${t.linkCardBorder}`,
+                    borderRadius: '8px',
+                    padding: '12px 14px',
+                    marginBottom: '8px',
+                    cursor: 'pointer',
+                    transition: 'border-color 0.15s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = t.accent
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = t.linkCardBorder
+                  }}
+                >
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginBottom: snippet ? '6px' : 0,
+                  }}>
+                    <div style={{
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      background: t.accent2,
+                      flexShrink: 0,
+                    }} />
+                    <div style={{
+                      fontSize: '13px',
+                      color: t.accent2,
+                      fontWeight: 500,
+                    }}>
+                      {bl.from_title}
+                    </div>
+                    {bl.relationship && (
+                      <div style={{
+                        fontSize: '11px',
+                        color: t.text3,
+                        background: t.bg3,
+                        border: `1px solid ${t.border2}`,
+                        borderRadius: '4px',
+                        padding: '1px 6px',
+                        marginLeft: 'auto',
+                        flexShrink: 0,
+                      }}>
+                        {bl.relationship}
+                      </div>
+                    )}
+                  </div>
+                  {snippet && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: t.text2,
+                      lineHeight: '1.6',
+                      paddingLeft: '14px',
+                    }}>
+                      {snippet}
+                    </div>
+                  )}
+                  {bl.from_tags && (
+                    <div style={{
+                      paddingLeft: '14px',
+                      marginTop: '6px',
+                      display: 'flex',
+                      gap: '5px',
+                      flexWrap: 'wrap',
+                    }}>
+                      {bl.from_tags.split(',').map(tag => tag.trim()).filter(Boolean).map(tag => (
+                        <span key={tag} style={{
+                          fontSize: '10px',
+                          color: t.text3,
+                          background: t.bg3,
+                          border: `1px solid ${t.border2}`,
+                          borderRadius: '4px',
+                          padding: '1px 6px',
+                        }}>
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {showLinkModal && (

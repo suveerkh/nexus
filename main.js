@@ -36,6 +36,7 @@ app.whenReady().then(() => {
   ipcMain.handle('delete-link', (_, id) => db.deleteLink(id))
   ipcMain.handle('get-all-links', () => db.getAllLinks())
   ipcMain.handle('update-link', (_, id, relationship) => db.updateLink(id, relationship))
+  ipcMain.handle('get-backlinks', (_, topicId) => db.getBacklinks(topicId))
 
   createWindow()
 })

@@ -11,4 +11,5 @@ contextBridge.exposeInMainWorld('nexus', {
   deleteLink: (id) => ipcRenderer.invoke('delete-link', id),
   getAllLinks: () => ipcRenderer.invoke('get-all-links'),
   updateLink: (id, relationship) => ipcRenderer.invoke('update-link', id, relationship),
+  getBacklinks: (topicId) => ipcRenderer.invoke('get-backlinks', topicId),
 })
