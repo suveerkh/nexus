@@ -1,7 +1,14 @@
-import { useState, useEffect } from 'react'
 import Editor from '../components/Editor'
+import { useState, useEffect, useRef } from 'react'
 
-export default function Topic({ id, topics, onBack, onDelete, onSelectTopic, theme: t }) {
+export default function Topic({
+  id,
+  topics,
+  onBack,
+  onDelete,
+  onSelectTopic,
+  theme: t,
+}) {
   const [topic, setTopic] = useState(null)
   const [links, setLinks] = useState([])
   const [content, setContent] = useState('')
@@ -10,6 +17,9 @@ export default function Topic({ id, topics, onBack, onDelete, onSelectTopic, the
   const [showLinkModal, setShowLinkModal] = useState(false)
   const [linkTarget, setLinkTarget] = useState('')
   const [linkRel, setLinkRel] = useState('')
+  const [saveStatus, setSaveStatus] = useState('saved')
+  const saveTimer = useRef(null)
+  const tagTimer = useRef(null)
 
   const load = async () => {
     const tp = await window.nexus.getTopic(id)
@@ -21,7 +31,9 @@ export default function Topic({ id, topics, onBack, onDelete, onSelectTopic, the
     setLinks(l)
   }
 
-  useEffect(() => { load() }, [id])
+  useEffect(() => {
+    load()
+  }, [id])
 
   const save = () => window.nexus.updateTopic(id, content, tags, title)
   const saveTitle = (val) => window.nexus.updateTopic(id, content, tags, val)
@@ -47,9 +59,14 @@ export default function Topic({ id, topics, onBack, onDelete, onSelectTopic, the
     }
   }
 
-  if (!topic) return <div style={{ padding: '32px', color: t.text3 }}>Loading...</div>
+  if (!topic)
+    return <div style={{ padding: '32px', color: t.text3 }}>Loading...</div>
 
-  const otherTopics = topics.filter(tp => tp.id !== id && !links.find(l => l.to_id === tp.id || l.from_id === tp.id))
+  const otherTopics = topics.filter(
+    (tp) =>
+      tp.id !== id &&
+      !links.find((l) => l.to_id === tp.id || l.from_id === tp.id)
+  )
 
   const inputStyle = {
     width: '100%',
@@ -81,53 +98,96 @@ export default function Topic({ id, topics, onBack, onDelete, onSelectTopic, the
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-      <div style={{
-        height: '48px',
-        borderBottom: `1px solid ${t.topbarBorder}`,
-        display: 'flex',
-        alignItems: 'center',
-        padding: '0 24px',
-        gap: '8px',
-        flexShrink: 0,
-        background: t.bg,
-      }}>
-        <button onClick={onBack} style={{
-          background: 'none', border: 'none', color: t.text3,
-          cursor: 'pointer', fontSize: '13px', fontFamily: 'Inter, sans-serif',
-        }}>
+      <div
+        style={{
+          height: '48px',
+          borderBottom: `1px solid ${t.topbarBorder}`,
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 24px',
+          gap: '8px',
+          flexShrink: 0,
+          background: t.bg,
+        }}
+      >
+        <button
+          onClick={onBack}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: t.text3,
+            cursor: 'pointer',
+            fontSize: '13px',
+            fontFamily: 'Inter, sans-serif',
+          }}
+        >
           ← Topics
         </button>
         <span style={{ color: t.border }}>/</span>
-        <span style={{ fontSize: '13px', color: t.accent, fontWeight: 500 }}>{title}</span>
+        <span style={{ fontSize: '13px', color: t.accent, fontWeight: 500 }}>
+          {title}
+        </span>
 
-        <button onClick={handleDelete} style={{
-          marginLeft: 'auto',
-          background: 'none',
-          border: '1px solid transparent',
-          color: t.text3,
-          fontSize: '12px',
-          padding: '5px 12px',
-          borderRadius: '6px',
-          cursor: 'pointer',
-          fontFamily: 'Inter, sans-serif',
-          transition: 'all 0.12s',
-        }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = '#cc3333'; e.currentTarget.style.color = '#cc3333' }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.color = t.text3 }}
+        <span
+          style={{
+            fontSize: '11px',
+            color: saveStatus === 'saved' ? t.text3 : t.accent,
+            marginLeft: '8px',
+            transition: 'color 0.2s',
+          }}
+        >
+          {saveStatus === 'saved' ? '✓ Saved' : 'Saving...'}
+        </span>
+
+        <button
+          onClick={handleDelete}
+          style={{
+            marginLeft: 'auto',
+            background: 'none',
+            border: '1px solid transparent',
+            color: t.text3,
+            fontSize: '12px',
+            padding: '5px 12px',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontFamily: 'Inter, sans-serif',
+            transition: 'all 0.12s',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = '#cc3333'
+            e.currentTarget.style.color = '#cc3333'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'transparent'
+            e.currentTarget.style.color = t.text3
+          }}
         >
           Delete
         </button>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '28px', maxWidth: '680px' }}>
+      <div
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: '28px',
+          maxWidth: '680px',
+        }}
+      >
         <input
           value={title}
-          onChange={e => setTitle(e.target.value)}
-          onBlur={e => saveTitle(e.target.value)}
+          onChange={(e) => setTitle(e.target.value)}
+          onBlur={(e) => saveTitle(e.target.value)}
           style={{
-            fontSize: '22px', fontWeight: 600, color: t.text1,
-            background: 'none', border: 'none', outline: 'none',
-            width: '100%', marginBottom: '8px', fontFamily: 'Inter, sans-serif',
+            fontSize: '22px',
+            fontWeight: 600,
+            color: t.text1,
+            background: 'none',
+            border: 'none',
+            outline: 'none',
+            width: '100%',
+            marginBottom: '8px',
+            fontFamily: 'Inter, sans-serif',
           }}
         />
 
@@ -139,7 +199,15 @@ export default function Topic({ id, topics, onBack, onDelete, onSelectTopic, the
           <div style={sectionLabel}>NOTES</div>
           <Editor
             content={content}
-            onChange={(html) => { setContent(html); window.nexus.updateTopic(id, html, tags, title) }}
+            onChange={(html) => {
+              setContent(html)
+              setSaveStatus('unsaved')
+              clearTimeout(saveTimer.current)
+              saveTimer.current = setTimeout(() => {
+                window.nexus.updateTopic(id, html, tags, title)
+                setSaveStatus('saved')
+              }, 500)
+            }}
             theme={t}
           />
         </div>
@@ -148,9 +216,17 @@ export default function Topic({ id, topics, onBack, onDelete, onSelectTopic, the
           <div style={sectionLabel}>TAGS</div>
           <input
             value={tags}
-            onChange={e => setTags(e.target.value)}
+            onChange={(e) => {
+              setTags(e.target.value)
+              setSaveStatus('unsaved')
+              clearTimeout(tagTimer.current)
+              tagTimer.current = setTimeout(() => {
+                window.nexus.updateTopic(id, content, e.target.value, title)
+                setSaveStatus('saved')
+              }, 500)
+            }}
             onBlur={save}
-            placeholder="chemistry, grade-11, atomic-structure"
+            placeholder="chemistry, atomic-structure"
             style={inputStyle}
           />
         </div>
@@ -159,93 +235,187 @@ export default function Topic({ id, topics, onBack, onDelete, onSelectTopic, the
           <div style={sectionLabel}>LINKED TOPICS</div>
 
           {links.length === 0 && (
-            <div style={{ color: t.text4, fontSize: '13px', marginBottom: '12px' }}>No links yet.</div>
+            <div
+              style={{ color: t.text4, fontSize: '13px', marginBottom: '12px' }}
+            >
+              No links yet.
+            </div>
           )}
 
-          {links.map(l => (
-            <div key={l.id} style={{
-              background: t.linkCardBg,
-              border: `1px solid ${t.linkCardBorder}`,
-              borderRadius: '8px',
-              padding: '11px 14px',
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '10px',
-              marginBottom: '8px',
-            }}>
-              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: t.accent, marginTop: '5px', flexShrink: 0 }} />
+          {links.map((l) => (
+            <div
+              key={l.id}
+              style={{
+                background: t.linkCardBg,
+                border: `1px solid ${t.linkCardBorder}`,
+                borderRadius: '8px',
+                padding: '11px 14px',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '10px',
+                marginBottom: '8px',
+              }}
+            >
+              <div
+                style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: t.accent,
+                  marginTop: '5px',
+                  flexShrink: 0,
+                }}
+              />
               <div style={{ flex: 1 }}>
                 <div
-                  onClick={() => onSelectTopic(l.from_id === id ? l.to_id : l.from_id)}
-                  style={{ fontSize: '13px', color: t.accent2, fontWeight: 500, cursor: 'pointer', textDecoration: 'underline' }}
+                  onClick={() =>
+                    onSelectTopic(l.from_id === id ? l.to_id : l.from_id)
+                  }
+                  style={{
+                    fontSize: '13px',
+                    color: t.accent2,
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                  }}
                 >
                   {l.to_title}
                 </div>
-                <div style={{ fontSize: '11px', color: t.text3, marginTop: '3px', lineHeight: '1.5' }}>{l.relationship}</div>
+                <div
+                  style={{
+                    fontSize: '11px',
+                    color: t.text3,
+                    marginTop: '3px',
+                    lineHeight: '1.5',
+                  }}
+                >
+                  {l.relationship}
+                </div>
               </div>
-              <button onClick={() => removeLink(l.id)} style={{
-                background: 'none', border: 'none', color: t.text3,
-                cursor: 'pointer', fontSize: '16px', lineHeight: 1,
-              }}>×</button>
+              <button
+                onClick={() => removeLink(l.id)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: t.text3,
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  lineHeight: 1,
+                }}
+              >
+                ×
+              </button>
             </div>
           ))}
 
-          <button onClick={() => setShowLinkModal(true)} style={{
-            background: t.addLinkBg,
-            border: `1px dashed ${t.addLinkBorder}`,
-            color: t.addLinkColor,
-            fontSize: '12px',
-            padding: '8px 14px',
-            borderRadius: '7px',
-            cursor: 'pointer',
-            fontFamily: 'Inter, sans-serif',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            marginTop: '4px',
-          }}>
+          <button
+            onClick={() => setShowLinkModal(true)}
+            style={{
+              background: t.addLinkBg,
+              border: `1px dashed ${t.addLinkBorder}`,
+              color: t.addLinkColor,
+              fontSize: '12px',
+              padding: '8px 14px',
+              borderRadius: '7px',
+              cursor: 'pointer',
+              fontFamily: 'Inter, sans-serif',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              marginTop: '4px',
+            }}
+          >
             + Add Link
           </button>
         </div>
       </div>
 
       {showLinkModal && (
-        <div style={{
-          position: 'fixed', inset: 0, background: '#00000066',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
-        }}>
-          <div style={{
-            background: t.modalBg,
-            border: `1px solid ${t.modalBorder}`,
-            borderRadius: '12px',
-            padding: '24px',
-            width: '400px',
-          }}>
-            <div style={{ fontSize: '14px', fontWeight: 600, color: t.text1, marginBottom: '16px' }}>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: '#00000066',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100,
+          }}
+        >
+          <div
+            style={{
+              background: t.modalBg,
+              border: `1px solid ${t.modalBorder}`,
+              borderRadius: '12px',
+              padding: '24px',
+              width: '400px',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '14px',
+                fontWeight: 600,
+                color: t.text1,
+                marginBottom: '16px',
+              }}
+            >
               Link to a topic
             </div>
-            <select value={linkTarget} onChange={e => setLinkTarget(e.target.value)}
-              style={{ ...inputStyle, marginBottom: '10px' }}>
-              <option value=''>Select a topic...</option>
-              {otherTopics.map(tp => <option key={tp.id} value={tp.id}>{tp.title}</option>)}
+            <select
+              value={linkTarget}
+              onChange={(e) => setLinkTarget(e.target.value)}
+              style={{ ...inputStyle, marginBottom: '10px' }}
+            >
+              <option value="">Select a topic...</option>
+              {otherTopics.map((tp) => (
+                <option key={tp.id} value={tp.id}>
+                  {tp.title}
+                </option>
+              ))}
             </select>
             <input
               value={linkRel}
-              onChange={e => setLinkRel(e.target.value)}
+              onChange={(e) => setLinkRel(e.target.value)}
               placeholder="How are they related? e.g. 1 amu = 1/Nₐ grams"
               style={{ ...inputStyle, marginBottom: '16px' }}
             />
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-              <button onClick={() => setShowLinkModal(false)} style={{
-                background: 'none', border: `1px solid ${t.border}`, color: t.text3,
-                padding: '8px 16px', borderRadius: '7px', cursor: 'pointer',
-                fontSize: '12px', fontFamily: 'Inter, sans-serif',
-              }}>Cancel</button>
-              <button onClick={addLink} style={{
-                background: t.newBtnBg, border: `1px solid ${t.newBtnBorder}`, color: t.accent2,
-                padding: '8px 16px', borderRadius: '7px', cursor: 'pointer',
-                fontSize: '12px', fontFamily: 'Inter, sans-serif',
-              }}>Link</button>
+            <div
+              style={{
+                display: 'flex',
+                gap: '8px',
+                justifyContent: 'flex-end',
+              }}
+            >
+              <button
+                onClick={() => setShowLinkModal(false)}
+                style={{
+                  background: 'none',
+                  border: `1px solid ${t.border}`,
+                  color: t.text3,
+                  padding: '8px 16px',
+                  borderRadius: '7px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontFamily: 'Inter, sans-serif',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={addLink}
+                style={{
+                  background: t.newBtnBg,
+                  border: `1px solid ${t.newBtnBorder}`,
+                  color: t.accent2,
+                  padding: '8px 16px',
+                  borderRadius: '7px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontFamily: 'Inter, sans-serif',
+                }}
+              >
+                Link
+              </button>
             </div>
           </div>
         </div>
