@@ -5,7 +5,7 @@ html, body, #root {
   overflow: hidden;
 }
 
-/* Scrollbars — dark mode (default) */
+/* Scrollbars — hidden by default, fade in on scroll */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -16,24 +16,28 @@ html, body, #root {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e2a5a;
+  background: transparent;
   border-radius: 999px;
-  transition: background 0.2s;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #3a4a8a;
+  transition: background 0.3s;
 }
 
 ::-webkit-scrollbar-corner {
   background: transparent;
 }
 
-/* Scrollbars — light mode */
-[data-theme="light"]::-webkit-scrollbar-thumb {
+/* Show on scroll via .is-scrolling class toggled by JS */
+.is-scrolling::-webkit-scrollbar-thumb {
+  background: #1e2a5a;
+}
+
+.is-scrolling::-webkit-scrollbar-thumb:hover {
+  background: #3a4a8a;
+}
+
+[data-theme="light"] .is-scrolling::-webkit-scrollbar-thumb {
   background: #c0cce8;
 }
 
-[data-theme="light"]::-webkit-scrollbar-thumb:hover {
+[data-theme="light"] .is-scrolling::-webkit-scrollbar-thumb:hover {
   background: #9aaad0;
 }

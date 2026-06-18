@@ -9,6 +9,7 @@ import { BsMoon, BsSun } from 'react-icons/bs'
 
 export default function App() {
   const [topics, setTopics] = useState([])
+  const [clusters, setClusters] = useState([])
   const [activePage, setActivePage] = useState('home')
   const [activeTopicId, setActiveTopicId] = useState(null)
   const [darkMode, setDarkMode] = useState(() => {
@@ -91,8 +92,12 @@ export default function App() {
   }
 
   const loadTopics = async () => {
-    const data = await window.nexus.getTopics()
+    const [data, clusterData] = await Promise.all([
+      window.nexus.getTopics(),
+      window.nexus.getClusters(),
+    ])
     setTopics(data)
+    setClusters(clusterData)
     return data
   }
 
@@ -378,6 +383,7 @@ ${linkedTopics || '_No links yet._'}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
         onDragEnd={handleDragEnd}
+        clusters={clusters}
         activeTag={activeTag}
         onClearTag={() => setActiveTag(null)}
       />

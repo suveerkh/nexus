@@ -18,6 +18,7 @@ export default function Topic({
   const [showLinkModal, setShowLinkModal] = useState(false)
   const [linkTarget, setLinkTarget] = useState('')
   const [linkRel, setLinkRel] = useState('')
+  const [editingLink, setEditingLink] = useState(null) // { id, to_id, to_title }
   const [saveStatus, setSaveStatus] = useState('saved')
   const saveTimer = useRef(null)
   const tagTimer = useRef(null)
@@ -44,11 +45,25 @@ export default function Topic({
 
   const addLink = async () => {
     if (!linkTarget || !linkRel) return
-    await window.nexus.createLink(id, parseInt(linkTarget), linkRel)
+    if (editingLink) {
+      // delete old, create new with updated relationship
+      await window.nexus.deleteLink(editingLink.id)
+      await window.nexus.createLink(id, editingLink.to_id, linkRel)
+      setEditingLink(null)
+    } else {
+      await window.nexus.createLink(id, parseInt(linkTarget), linkRel)
+    }
     setShowLinkModal(false)
     setLinkTarget('')
     setLinkRel('')
     load()
+  }
+
+  const openEditLink = (l) => {
+    setEditingLink({ id: l.id, to_id: l.to_id, to_title: l.to_title })
+    setLinkTarget(String(l.to_id))
+    setLinkRel(l.relationship || '')
+    setShowLinkModal(true)
   }
 
   const removeLink = async (linkId) => {
@@ -287,12 +302,26 @@ export default function Topic({
               dotColor: t.accent,
               onClick: () => onSelectTopic(l.to_id),
               extra: (
-                <button
-                  onClick={(e) => { e.stopPropagation(); removeLink(l.id) }}
-                  style={{ background: 'none', border: 'none', color: t.text3, cursor: 'pointer', fontSize: '16px', lineHeight: 1, flexShrink: 0 }}
-                >
-                  ×
-                </button>
+                <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); openEditLink(l) }}
+                    title="Edit relationship"
+                    style={{ background: 'none', border: 'none', color: t.text3, cursor: 'pointer', fontSize: '12px', lineHeight: 1, padding: '2px 4px' }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = t.accent2}
+                    onMouseLeave={(e) => e.currentTarget.style.color = t.text3}
+                  >
+                    ✎
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); removeLink(l.id) }}
+                    title="Remove link"
+                    style={{ background: 'none', border: 'none', color: t.text3, cursor: 'pointer', fontSize: '16px', lineHeight: 1, padding: '2px 4px' }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = '#cc5555'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = t.text3}
+                  >
+                    ×
+                  </button>
+                </div>
               ),
             }))}
 
@@ -392,27 +421,35 @@ export default function Topic({
             borderRadius: '12px', padding: '24px', width: '400px',
           }}>
             <div style={{ fontSize: '14px', fontWeight: 600, color: t.text1, marginBottom: '16px' }}>
-              Link to a topic
+              {editingLink ? `Edit relationship → ${editingLink.to_title}` : 'Link to a topic'}
             </div>
-            <select
-              value={linkTarget}
-              onChange={(e) => setLinkTarget(e.target.value)}
-              style={{ ...inputStyle, marginBottom: '10px' }}
-            >
-              <option value="">Select a topic...</option>
-              {otherTopics.map((tp) => (
-                <option key={tp.id} value={tp.id}>{tp.title}</option>
-              ))}
-            </select>
-            <input
-              value={linkRel}
-              onChange={(e) => setLinkRel(e.target.value)}
-              placeholder="How are they related? e.g. 1 amu = 1/Nₐ grams"
-              style={{ ...inputStyle, marginBottom: '16px' }}
-            />
+            {!editingLink && (
+              <select
+                value={linkTarget}
+                onChange={(e) => setLinkTarget(e.target.value)}
+                style={{ ...inputStyle, marginBottom: '10px' }}
+              >
+                <option value="">Select a topic...</option>
+                {otherTopics.map((tp) => (
+                  <option key={tp.id} value={tp.id}>{tp.title}</option>
+                ))}
+              </select>
+            )}
+            <div style={{ position: 'relative' }}>
+              <input
+                value={linkRel}
+                onChange={(e) => setLinkRel(e.target.value.slice(0, 80))}
+                placeholder="How are they related? e.g. 1 amu = 1/Nₐ grams"
+                maxLength={80}
+                style={{ ...inputStyle, marginBottom: '4px' }}
+              />
+              <div style={{ fontSize: '11px', color: linkRel.length >= 72 ? (linkRel.length === 80 ? '#cc5555' : '#e8a838') : t.text3, textAlign: 'right', marginBottom: '12px' }}>
+                {linkRel.length}/80
+              </div>
+            </div>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
               <button
-                onClick={() => setShowLinkModal(false)}
+                onClick={() => { setShowLinkModal(false); setEditingLink(null); setLinkTarget(''); setLinkRel('') }}
                 style={{
                   background: 'none', border: `1px solid ${t.border}`, color: t.text3,
                   padding: '8px 16px', borderRadius: '7px', cursor: 'pointer',

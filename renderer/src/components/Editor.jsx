@@ -339,7 +339,7 @@ function TableContextMenu({ editor, x, y, t, onClose }) {
     { label: 'Merge cells', action: () => editor.chain().focus().mergeCells().run() },
     { label: 'Split cell', action: () => editor.chain().focus().splitCell().run() },
     null,
-    { label: '🗑 Delete table', action: () => editor.chain().focus().deleteTable().run(), danger: true },
+    { label: 'Delete table', action: () => editor.chain().focus().deleteTable().run(), danger: true },
   ]
 
   return (
@@ -372,70 +372,35 @@ function TableContextMenu({ editor, x, y, t, onClose }) {
   )
 }
 
-// ── Table inline +/− controls injected into DOM ────────────────────────────────
-// We inject real DOM buttons directly into the tableWrapper so they move with
-// the table naturally — no getBoundingClientRect math needed.
-function useTableControls(editor, t) {
+// ── Table expand button injected into DOM ──────────────────────────────────────
+function useTableControls(editor, t, onExpand) {
   useEffect(() => {
     if (!editor) return
 
     const inject = () => {
       const dom = editor.view.dom
-      // Remove stale controls from any wrapper that no longer has a table
       dom.querySelectorAll('.nexus-table-controls').forEach(el => el.remove())
 
       dom.querySelectorAll('.tableWrapper').forEach(wrapper => {
         const table = wrapper.querySelector('table')
         if (!table) return
 
-        // ── Add-row button (below table) ──────────────────────────────────
-        const addRowBtn = document.createElement('div')
-        addRowBtn.className = 'nexus-table-controls nexus-add-row'
-        addRowBtn.title = 'Add row'
-        addRowBtn.textContent = '+'
-        addRowBtn.addEventListener('mousedown', (e) => {
+        // ── Expand button (top-right corner) — full view popup ────────────
+        const expandBtn = document.createElement('div')
+        expandBtn.className = 'nexus-table-controls nexus-expand-table'
+        expandBtn.title = 'Open full view'
+        expandBtn.innerHTML = '⤢'
+        expandBtn.addEventListener('mousedown', (e) => {
           e.preventDefault()
           e.stopPropagation()
-          // focus last cell then add row
-          const lastRow = table.querySelector('tr:last-child')
-          const lastCell = lastRow?.querySelector('th, td')
-          if (lastCell) {
-            try {
-              const pos = editor.view.posAtDOM(lastCell, 0)
-              editor.chain().focus().setTextSelection(pos).addRowAfter().run()
-            } catch { editor.chain().focus().addRowAfter().run() }
-          } else {
-            editor.chain().focus().addRowAfter().run()
-          }
+          if (onExpand) onExpand(table.outerHTML)
         })
-        wrapper.appendChild(addRowBtn)
-
-        // ── Add-col button (right of table) ───────────────────────────────
-        const addColBtn = document.createElement('div')
-        addColBtn.className = 'nexus-table-controls nexus-add-col'
-        addColBtn.title = 'Add column'
-        addColBtn.textContent = '+'
-        addColBtn.addEventListener('mousedown', (e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          const lastCell = table.querySelector('tr:first-child th:last-child, tr:first-child td:last-child')
-          if (lastCell) {
-            try {
-              const pos = editor.view.posAtDOM(lastCell, 0)
-              editor.chain().focus().setTextSelection(pos).addColumnAfter().run()
-            } catch { editor.chain().focus().addColumnAfter().run() }
-          } else {
-            editor.chain().focus().addColumnAfter().run()
-          }
-        })
-        wrapper.appendChild(addColBtn)
+        wrapper.appendChild(expandBtn)
       })
     }
 
-    // Run on every editor update
     editor.on('update', inject)
     editor.on('selectionUpdate', inject)
-    // Initial run after a tick
     const t0 = setTimeout(inject, 50)
 
     return () => {
@@ -729,6 +694,7 @@ export default function Editor({ content, onChange, theme: t }) {
   const [showSymbols, setShowSymbols] = useState(false)
   const [showMathModal, setShowMathModal] = useState(false)
   const [tableCtxMenu, setTableCtxMenu] = useState(null) // { x, y }
+  const [tableFullView, setTableFullView] = useState(null) // table HTML string
   const symbolsRef = useRef()
 
   const editor = useEditor({
@@ -766,7 +732,7 @@ export default function Editor({ content, onChange, theme: t }) {
   })
 
   // Inject table +/− DOM controls
-  useTableControls(editor, t)
+  useTableControls(editor, t, (html) => setTableFullView(html))
 
   // Sync theme CSS vars onto editor DOM for injected buttons
   useEffect(() => {
@@ -837,6 +803,48 @@ export default function Editor({ content, onChange, theme: t }) {
           x={tableCtxMenu.x} y={tableCtxMenu.y}
           onClose={() => setTableCtxMenu(null)}
         />
+      )}
+      {tableFullView && (
+        <div
+          onMouseDown={() => setTableFullView(null)}
+          style={{
+            position: 'fixed', inset: 0, background: '#000000aa',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 600,
+            padding: '40px',
+          }}
+        >
+          <div
+            onMouseDown={e => e.stopPropagation()}
+            style={{
+              background: t.modalBg, border: `1px solid ${t.modalBorder}`,
+              borderRadius: '12px', padding: '20px',
+              maxWidth: '92vw', maxHeight: '88vh',
+              display: 'flex', flexDirection: 'column', gap: '14px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ fontSize: '13px', fontWeight: 600, color: t.text1, letterSpacing: '0.5px' }}>
+                Table — full view
+              </div>
+              <button
+                onClick={() => setTableFullView(null)}
+                style={{
+                  background: 'none', border: `1px solid ${t.border}`, color: t.text3,
+                  borderRadius: '6px', padding: '4px 12px', cursor: 'pointer',
+                  fontSize: '12px', fontFamily: 'Inter, sans-serif',
+                }}
+              >Close</button>
+            </div>
+            <div
+              className="nexus-fullview-table"
+              style={{ overflow: 'auto', flex: 1 }}
+              dangerouslySetInnerHTML={{ __html: tableFullView }}
+            />
+            <div style={{ fontSize: '11px', color: t.text4 }}>
+              Read-only view. Edit directly in the note.
+            </div>
+          </div>
+        </div>
       )}
 
       <div style={{
@@ -995,40 +1003,36 @@ export default function Editor({ content, onChange, theme: t }) {
               top: 0;
               width: 3px;
             }
-            .tiptap-editor .tableWrapper { overflow-x: auto; position: relative; }
+            .tiptap-editor .tableWrapper {
+              max-width: 100%;
+              overflow-x: auto;
+              position: relative;
+            }
 
-            /* ── Inline table +/− controls ── */
-            .nexus-add-row, .nexus-add-col {
-              display: flex; align-items: center; justify-content: center;
-              font-size: 14px; font-weight: 700; line-height: 1;
-              cursor: pointer; user-select: none;
-              border-radius: 4px;
-              color: var(--nexus-accent2, #7fa4f2);
-              background: var(--nexus-btn-bg, #1a2550);
-              border: 1px solid var(--nexus-accent, #3a5fc0);
-              box-shadow: 0 1px 4px #00000033;
-              transition: transform 0.1s, box-shadow 0.1s, opacity 0.15s;
-              opacity: 0.7;
-              position: absolute;
-              z-index: 20;
+            /* ── Inline table controls ── */
+            .nexus-expand-table {
+              width: 20px; height: 20px;
+              top: -10px; right: -10px;
+              font-size: 12px;
             }
-            .nexus-add-row:hover, .nexus-add-col:hover {
-              opacity: 1; transform: scale(1.15);
-              box-shadow: 0 2px 8px #00000055;
+            .nexus-expand-table:hover { opacity: 1; transform: scale(1.15); }
+            /* Full-view popup table */
+            .nexus-fullview-table table {
+              border-collapse: collapse;
+              font-size: 14px;
+              width: max-content;
+              min-width: 100%;
             }
-            .nexus-add-row {
-              width: 22px; height: 18px;
-              bottom: -22px;
-              left: 50%; transform: translateX(-50%);
+            .nexus-fullview-table th, .nexus-fullview-table td {
+              border: 1px solid ${t.border};
+              padding: 9px 14px;
+              color: ${t.inputColor};
+              text-align: left;
+              vertical-align: top;
+              white-space: nowrap;
             }
-            .nexus-add-row:hover { transform: translateX(-50%) scale(1.15); }
-            .nexus-add-col {
-              width: 18px; height: 22px;
-              top: 50%; right: -22px;
-              transform: translateY(-50%);
-            }
-            .nexus-add-col:hover { transform: translateY(-50%) scale(1.15); }
-            .tiptap-editor .tableWrapper { padding-bottom: 28px; padding-right: 26px; }
+            .nexus-fullview-table th { background: ${t.bg3}; font-weight: 600; }
+            .nexus-fullview-table tr:nth-child(even) td { background: ${t.bg3}44; }
 
             /* ── Image ── */
             .tiptap-editor img {
