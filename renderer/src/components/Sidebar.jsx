@@ -3,8 +3,7 @@ import { BsDiagram3, BsDownload, BsUpload } from 'react-icons/bs'
 export default function Sidebar({
   topics, activeTopicId, activePage, onSelectTopic, onNewTopic,
   onHome, onGraph, onExport, onImport, theme: t,
-  dragOverId, onDragStart, onDragOver, onDrop, onDragEnd,
-  clusters = [],
+  dragOverId, onDragStart, onDragOver, onDrop, onDragEnd
 }) {
   return (
     <aside style={{
@@ -84,24 +83,14 @@ export default function Sidebar({
             onMouseEnter={e => { if (activeTopicId !== topic.id && dragOverId !== topic.id) e.currentTarget.style.background = t.bg3 }}
             onMouseLeave={e => { if (activeTopicId !== topic.id && dragOverId !== topic.id) e.currentTarget.style.background = 'transparent' }}
           >
-            {(() => {
-              const cluster = topic.cluster_id ? clusters.find(c => c.id === topic.cluster_id) : null
-              return (
-                <>
-                  {cluster && (
-                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: cluster.color, flexShrink: 0, marginRight: '6px' }} />
-                  )}
-                  <span style={{
-                    fontSize: '13px', fontWeight: 500,
-                    color: activeTopicId === topic.id ? t.accent2 : t.text2,
-                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                    userSelect: 'none',
-                  }}>
-                    {topic.title}
-                  </span>
-                </>
-              )
-            })()}
+            <span style={{
+              fontSize: '13px', fontWeight: 500,
+              color: activeTopicId === topic.id ? t.accent2 : t.text2,
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              userSelect: 'none',
+            }}>
+              {topic.title}
+            </span>
           </div>
         ))}
       </div>
